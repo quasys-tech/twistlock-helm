@@ -1,0 +1,55 @@
+{{- /* Vanilla Kubernetes: Gateway API Gateway — TLS passthrough listener'ları */ -}}
+{{- if and (not .Values.openshift) .Values.gatewayApi.enabled .Values.gatewayApi.gateway.create }}
+{{- include "twistlock-console.gatewayApi.validate" . }}
+{{- $gw := .Values.gatewayApi.gateway }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ $gw.name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    name: console
+  {{- with $gw.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  gatewayClassName: {{ $gw.gatewayClassName }}
+  {{- with $gw.infrastructure }}
+  infrastructure:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  {{- with $gw.addresses }}
+  addresses:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  listeners:
+  # Console UI/API → twistlock-console:{{ .Values.MANAGEMENT_PORT_HTTPS }}
+  - name: console
+    protocol: TLS
+    port: {{ $gw.consolePort | int }}
+    hostname: {{ .Values.routename | quote }}
+    tls:
+      mode: Passthrough
+    allowedRoutes:
+      namespaces:
+        from: Same
+      kinds:
+      - group: gateway.networking.k8s.io
+        kind: TLSRoute
+  {{- if .Values.defenderRouteEnabled }}
+  # Defender (WSS) → twistlock-console:{{ .Values.COMMUNICATION_PORT }}
+  - name: defender
+    protocol: TLS
+    port: {{ $gw.defenderPort | int }}
+    hostname: {{ .Values.defenderroutename | quote }}
+    tls:
+      mode: Passthrough
+    allowedRoutes:
+      namespaces:
+        from: Same
+      kinds:
+      - group: gateway.networking.k8s.io
+        kind: TLSRoute
+  {{- end }}
+{{- end }}

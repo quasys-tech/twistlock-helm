@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: twistlock-console
+  namespace: {{ .Values.namespace }}
+data:
+  {{- if .Values.SAAS_DEPLOYMENT }}
+  ALT_SERVICE_NAME: twistlock-console.{{ .Values.namespace }}
+{{- if .Values.CONSOLE_INIT_CONTAINER_CONFIGMAP_TEMPLATE }}
+{{ .Values.CONSOLE_INIT_CONTAINER_CONFIGMAP_TEMPLATE | indent 2 }}
+{{- end}}
+  {{- else }}
+  twistlock.cfg: {{ .Values.twistlock_cfg }}
+  {{- end}}

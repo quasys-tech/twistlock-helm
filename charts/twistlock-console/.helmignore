@@ -1,0 +1,20 @@
+# helm package sırasında chart'a dahil edilmeyecek dosyalar
+.DS_Store
+.git/
+.gitignore
+.bzr/
+.bzrignore
+.hg/
+.hgignore
+.svn/
+*.swp
+*.bak
+*.tmp
+*.orig
+*~
+.project
+.idea/
+*.tmproj
+.vscode/
+# Orijinal (yalnızca OpenShift) chart'ın yedeği
+.backup/

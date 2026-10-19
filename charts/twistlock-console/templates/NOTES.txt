@@ -1,0 +1,46 @@
+{{- $ns := .Values.namespace -}}
+Twistlock Console kuruldu — namespace: {{ $ns }}
+{{ if .Values.openshift }}
+Platform : OpenShift — Route (HAProxy), TLS passthrough
+{{- if .Values.route.enabled }}
+  Console UI : https://{{ .Values.routename | default "<router'ın ürettiği host>" }}
+  {{- if .Values.defenderRouteEnabled }}
+  Defender   : {{ .Values.defenderroutename | default "<router'ın ürettiği host>" }}:443
+  {{- end }}
+  Kontrol    : oc -n {{ $ns }} get route
+{{- else }}
+  Route kapalı (route.enabled: false).
+{{- end }}
+{{- else }}
+Platform : Kubernetes — Gateway API, TLS passthrough
+{{- if .Values.gatewayApi.enabled }}
+{{- $gw := .Values.gatewayApi.gateway }}
+  TLSRoute   : {{ include "twistlock-console.tlsRouteApiVersion" . }}
+  Console UI : https://{{ .Values.routename }}{{ if and $gw.create (ne (int $gw.consolePort) 443) }}:{{ $gw.consolePort | int }}{{ end }}
+  {{- if .Values.defenderRouteEnabled }}
+  Defender   : {{ .Values.defenderroutename }}:{{ if $gw.create }}{{ $gw.defenderPort | int }}{{ else }}<Gateway listener portu>{{ end }}
+  {{- end }}
+  {{- if $gw.create }}
+  Kontrol    : kubectl -n {{ $ns }} get gateway,tlsroute
+  DNS        : hostname'leri Gateway adresine yönlendirin
+               kubectl -n {{ $ns }} get gateway {{ $gw.name }} -o jsonpath='{.status.addresses[*].value}'
+  {{- else }}
+  {{- with .Values.gatewayApi.parentRefs }}
+  {{- $p := first . }}
+  Gateway    : {{ $p.namespace | default $ns }}/{{ $p.name }} (mevcut)
+  {{- end }}
+  Kontrol    : kubectl -n {{ $ns }} get tlsroute
+  DNS        : hostname'leri bu Gateway'in adresine yönlendirin
+  {{- end }}
+{{- else }}
+  Gateway API kapalı (gatewayApi.enabled: false) — dış erişim için serviceType'ı
+  LoadBalancer/NodePort yapın ya da kendi route/ingress kaynağınızı ekleyin.
+{{- end }}
+
+Pod Security: Console pod'u hostPath (/dev/log) bağlar. Namespace'te
+"baseline" veya "restricted" enforce ediliyorsa pod oluşmaz:
+  kubectl label ns {{ $ns }} pod-security.kubernetes.io/enforce=privileged --overwrite
+{{- end }}
+
+Defender'ların bağlandığı hostname Console sertifikasının SAN listesinde olmalı:
+Console UI > Manage > Defenders > Deploy > Subject Alternative Name

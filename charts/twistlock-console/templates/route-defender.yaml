@@ -1,0 +1,28 @@
+{{- /* OpenShift: Defender iletişimi (8084) — HAProxy router, TLS passthrough */ -}}
+{{- if and .Values.openshift .Values.route.enabled .Values.defenderRouteEnabled }}
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: defender
+  namespace: {{ .Values.namespace }}
+  labels:
+    name: console
+  {{- with .Values.route.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.defenderroutename }}
+  host: {{ . | quote }}
+  {{- end }}
+  to:
+    kind: Service
+    name: twistlock-console
+    weight: 100
+  port:
+    targetPort: communication-port
+  tls:
+    termination: passthrough
+    insecureEdgeTerminationPolicy: {{ .Values.route.insecureEdgeTerminationPolicy | default "Redirect" }}
+  wildcardPolicy: None
+{{- end }}

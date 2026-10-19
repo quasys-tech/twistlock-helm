@@ -1,0 +1,50 @@
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    name: console
+  name: twistlock-console
+  {{- if .Values.annotations }}
+  annotations:
+    {{- range .Values.annotations }}
+    {{ . -}}
+    {{- end }}
+  {{- end }}
+  namespace: {{ .Values.namespace }}
+spec:
+{{- if .Values.loadBalancerSourceRanges }}
+  loadBalancerSourceRanges:
+  - {{range .Values.loadBalancerSourceRanges}}{{ . }}{{end}}
+{{- end}}
+  {{- if .Values.serviceClusterIP }}
+  clusterIP: {{ .Values.serviceClusterIP }}
+  {{- else}}{{- end}}
+  ports:
+  - name: communication-port
+    port: {{ .Values.COMMUNICATION_PORT }}
+  {{- if .Values.MANAGEMENT_PORT_HTTPS }}
+  - name: management-port-https
+    port: {{ .Values.MANAGEMENT_PORT_HTTPS }}
+  {{- end}}
+  {{- if .Values.MANAGEMENT_PORT_HTTP }}
+  - name: mgmt-http
+    port: {{ .Values.MANAGEMENT_PORT_HTTP }}
+  {{- else }}
+  {{- end}}
+  {{- if .Values.DB_PORT }}
+  - name: db-port
+    port: {{ .Values.DB_PORT }}
+  {{- end}}
+  {{- if .Values.MONGODB_PORT }}
+  - name: mongodb-port
+    protocol: TCP
+    port: {{ .Values.MONGODB_PORT }}
+    targetPort: {{ .Values.MONGODB_PORT }}
+  {{- end}}
+  selector:
+    {{- if .Values.customerConsoleName }}
+    name: {{ .Values.customerConsoleName }}
+    {{- else }}
+    name: twistlock-console
+    {{- end }}
+  type: {{ .Values.serviceType }}

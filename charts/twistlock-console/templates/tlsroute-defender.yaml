@@ -1,0 +1,24 @@
+{{- /* Vanilla Kubernetes: Defender iletişimi (8084) — Gateway API TLSRoute, TLS passthrough */ -}}
+{{- if and (not .Values.openshift) .Values.gatewayApi.enabled .Values.defenderRouteEnabled }}
+{{- include "twistlock-console.gatewayApi.validate" . }}
+apiVersion: {{ include "twistlock-console.tlsRouteApiVersion" . }}
+kind: TLSRoute
+metadata:
+  name: defender
+  namespace: {{ .Values.namespace }}
+  labels:
+    name: console
+  {{- with .Values.gatewayApi.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  parentRefs:
+  {{- include "twistlock-console.gatewayApi.parentRefs" (dict "root" $ "section" "defender") | nindent 2 }}
+  hostnames:
+  - {{ .Values.defenderroutename | quote }}
+  rules:
+  - backendRefs:
+    - name: twistlock-console
+      port: {{ .Values.COMMUNICATION_PORT | int }}
+{{- end }}

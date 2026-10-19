@@ -1,0 +1,9 @@
+apiVersion: v1
+entries:
+  twistlock-console:
+  - apiVersion: v1
+    name: twistlock-console
+    version: 34.05.168
+    description: Twistlock Console Helm Chart
+    urls:
+    - twistlock-console-34.05.168.tgz

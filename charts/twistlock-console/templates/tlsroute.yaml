@@ -1,0 +1,24 @@
+{{- /* Vanilla Kubernetes: Console UI/API (8083) — Gateway API TLSRoute, TLS passthrough */ -}}
+{{- if and (not .Values.openshift) .Values.gatewayApi.enabled }}
+{{- include "twistlock-console.gatewayApi.validate" . }}
+apiVersion: {{ include "twistlock-console.tlsRouteApiVersion" . }}
+kind: TLSRoute
+metadata:
+  name: twistlock-console
+  namespace: {{ .Values.namespace }}
+  labels:
+    name: console
+  {{- with .Values.gatewayApi.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  parentRefs:
+  {{- include "twistlock-console.gatewayApi.parentRefs" (dict "root" $ "section" "console") | nindent 2 }}
+  hostnames:
+  - {{ .Values.routename | quote }}
+  rules:
+  - backendRefs:
+    - name: twistlock-console
+      port: {{ .Values.MANAGEMENT_PORT_HTTPS | int }}
+{{- end }}
